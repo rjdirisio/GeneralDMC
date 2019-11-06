@@ -44,6 +44,38 @@ class DMC:
                  masses = None,
                  startStructure = None
                  ):
+        """
+        :param simName:Simulation name for saving wavefunctions
+        :type simName:str
+        :param outputFolder:The folder where the results will be stored, including wavefunctions and energies
+        :type outputFolder:str
+        :param weighting:Discrete or Continuous weighting DMC.  Continuous means that there are fixed number of walkers
+        :type weighting:str
+        :param initialWalkers:Number of walkers we will start the simulation with
+        :type initialWalkers:int
+        :param nTimeSteps:Total time steps we will be propagating the walkers.  nTimeSteps*deltaT = total time in A.U.
+        :type nTimeSteps:int
+        :param equilTime: Time before we start collecting wavefunctions
+        :type equilTime:int
+        :param wfnSpacing:How many time steps in between we will propagate before collecting another wavefunction
+        :type wfnSpacing:int
+        :param DwSteps:Number of time steps for descendant weighting.
+        :type DwSteps: int
+        :param atoms:List of atoms for the simulation
+        :type atoms:list
+        :param dimensions: 3 leads to a 3N dimensional simulation. This should always be 3 for real systems.
+        :type dimensions:int
+        :param deltaT: The length of the time step; how many atomic units of time are you going in one time step.
+        :type deltaT: int
+        :param D: Diffusion Coefficient.  Usually set at 0.5
+        :type D:float
+        :param potential: Takes in coordinates, gives back energies
+        :type potential: function
+        :param masses:For feeding in artificial masses in atomic units.  If not, then the atoms param will designate masses
+        :type masses: list
+        :param startStructure:An initial structure to initialize all your walkers
+        :type startStructure:np.ndarray
+        """
         self.atoms=atoms
         self.simName = simName
         self.outputFolder = outputFolder
@@ -76,6 +108,11 @@ class DMC:
             self.contWts = None
 
     def birthOrDeath_vec(self,vref, Desc):
+        """
+        Chooses whether or not the walker made a bad enough random walk to be removed from the simulation.
+        For discrete weighting, this leads to removal or duplication of the walkers.  For continuous, this leads
+         to an update of the weights and a potential branching of a large weight walker to the smallest one
+         """
         if self.weighting == 'discrete':
             randNums = np.random.random(len(self.walkerC))
             deathMask = np.logical_or((1 - np.exp(-1. * (self.walkerV - vref) * self.deltaT)) < randNums, self.walkerV < vref)
@@ -110,6 +147,10 @@ class DMC:
         return walkerC + disps
 
     def getVref(self):  # Use potential of all walkers to calculate vref
+        """
+             Use the energy of all walkers to calculate vref with a correction for the fluctuation in the population
+             or weight.
+         """
         Vbar = np.average(self.walkerV)
         if self.weighting == 'discrete':
             correction = (len(self.walkerV) - self.initialWalkers) / self.initialWalkers
@@ -119,6 +160,15 @@ class DMC:
         return vref
 
     def propagate(self):
+        """
+             The main DMC loop.
+             1. Move Randomly
+             2. Calculate the Potential Energy
+             3. Birth/Death
+             4. Update Vref
+             Additionally, checks when the wavefunction has hit a point where it should save / start descendent
+             weighting.
+         """
         DW=False
         for prop in range(self.nTimeSteps):
             if prop % 100 == 0:
