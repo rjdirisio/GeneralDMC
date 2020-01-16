@@ -1,5 +1,6 @@
 import numpy as np
-import os,sys
+import os
+import time
 
 class Constants:
     atomic_units = {
@@ -143,7 +144,7 @@ class DMC:
             return self.contWts,self.whoFrom,self.walkerC,self.walkerV
 
     def moveRandomly(self,walkerC):
-        disps = np.random.normal(0.0, self.sigmas, size=np.shape(walkerC)).transpose(0,2,1)
+        disps = np.random.normal(0.0, self.sigmas, size=np.shape(walkerC.transpose(0,2,1))).transpose(0,2,1)
         return walkerC + disps
 
     def getVref(self):  # Use potential of all walkers to calculate vref
@@ -172,8 +173,9 @@ class DMC:
         DW=False
         for prop in range(self.nTimeSteps):
             if prop % 100 == 0:
-                print(prop)
-                print(len(self.walkerC))
+                print(f'propagation step {prop}')
+                if self.weighting == 'discrete':
+                    print(f'num walkers : {len(self.walkerC)}')
             self.walkerC = self.moveRandomly(self.walkerC)
             self.walkerV = self.potential(self.walkerC)
             if prop == 0:
@@ -214,28 +216,68 @@ class DMC:
 if __name__ == "__main__":
     def PatrickShingle(cds):
         import subprocess as sub
-        np.savetxt("PES/PES0/hoh_coord.dat", cds.reshape(cds.shape[0]*cds.shape[1],cds.shape[1]), header=str(len(cds)), comments="")
+        np.savetxt("PES/PES0/hoh_coord.dat", cds.reshape(cds.shape[0]*cds.shape[1],cds.shape[-1]), header=str(len(cds)), comments="")
         sub.run('./calc_h2o_pot', cwd='PES/PES0')
         return np.loadtxt('PES/PES0/hoh_pot.dat')
 
+    def protCluster(cds):
+        atms = ['H','H','H','O','H','H','O','H','H','O']
+        import subprocess as sub
+        import multiprocessing as mp
+        splt = np.array_split(cds,mp.cpu_count())
+        # for k in range(mp.cpu_count()): #worse performancce-wise
+        #     nwalkSplit = len(splt[k])
+        #     repAtms = np.tile(atms,nwalkSplit)
+        #     tmm = time.time()
+        #     np.savetxt('big'+str(k)+'coord.dat',
+        #                np.c_[splt[k].reshape(nwalkSplit*10,3),repAtms],
+        #                fmt='%s',
+        #                header='10\n'+str(nwalkSplit),
+        #                comments=''
+        #                )
+        # print(f'That took {time.time()-tmm} seconds.')
+        for k in range(mp.cpu_count()):
+            tmm2 = time.time()
+            fllK = open('big'+str(k)+'coord.dat','w+')
+            fllK.write("10\n")
+            fllK.write("%d\n" % len(splt[k]))
+            for walk in range(len(splt[k])):
+                for atm in range(len(atms)):
+                    fllK.write("%0.18f %0.18f %0.18f %s\n" % (splt[k][walk,atm,0],splt[k][walk,atm,1],splt[k][walk,atm,2],atms[atm]))
+            fllK.close()
+        print(f'THAT took {time.time() - tmm2} seconds.')
+        sub.call('runPots.sh')
+        vprime = np.loadtxt("big1/eng_dip.dat")[:,0]
+        for k in range(2,mp.cpu_count+1):
+            v = np.concatenate(vprime,np.loadtxt("big"+str(k)+"/eng_dip.dat")[:,0])
+        return v
+        print('hi')
 
-    dmcWater = DMC(simName = "DMC_con_test",
+    dmcTrimer = DMC(simName = "DMC_con_test",
                    outputFolder="DMCResults/",
-                   weighting='continuous',
+                   weighting='discrete',
                    initialWalkers=1000,
                    nTimeSteps=1000+1,
                    equilTime=500,
                    wfnSpacing=100,
                    DwSteps=50,
-                   atoms=["H", "H", "O"],
+                   atoms=['H','H','H','O','H','H','O','H','H','O'],
                    dimensions=3,
                    deltaT=5,
                    D=0.5,
-                   potential=PatrickShingle,
+                   potential=protCluster,
                    masses=None,
-                   startStructure = Constants.convert(np.array(
-                    [[0.9578400,0.0000000,0.0000000],
-                     [-0.2399535,0.9272970,0.0000000],
-                     [0.0000000,0.0000000,0.0000000]]) * 1.01,"angstroms",to_AU=True)
-                 )
-    dmcWater.run()
+                   startStructure = Constants.convert(
+                       np.array([[0.00000, 0.91527, -0.05817],
+                           [0.00000, 1.67720, 0.53729],
+                           [-0.87302, 0.35992, 0.01707],
+                           [2.56267, -0.75858, 0.76451],
+                           [2.70113, -0.40578, -0.73813],
+                           [2.07091, -0.46191, -0.00993],
+                           [0.87302, 0.35993, 0.01707],
+                           [-2.70115, -0.40575, -0.73811],
+                           [-2.56265, -0.75862, 0.76451],
+                           [-2.07092, -0.46190, -0.00993]]
+                                )* 1.01
+                       ,"angstroms",to_AU=True))
+    dmcTrimer.run()
