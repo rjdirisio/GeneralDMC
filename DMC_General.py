@@ -225,17 +225,6 @@ if __name__ == "__main__":
         import subprocess as sub
         import multiprocessing as mp
         splt = np.array_split(cds,mp.cpu_count())
-        # for k in range(mp.cpu_count()): #worse performancce-wise
-        #     nwalkSplit = len(splt[k])
-        #     repAtms = np.tile(atms,nwalkSplit)
-        #     tmm = time.time()
-        #     np.savetxt('big'+str(k)+'coord.dat',
-        #                np.c_[splt[k].reshape(nwalkSplit*10,3),repAtms],
-        #                fmt='%s',
-        #                header='10\n'+str(nwalkSplit),
-        #                comments=''
-        #                )
-        # print(f'That took {time.time()-tmm} seconds.')
         for k in range(mp.cpu_count()):
             tmm2 = time.time()
             fllK = open('big'+str(k)+'coord.dat','w+')
@@ -251,7 +240,7 @@ if __name__ == "__main__":
         for k in range(2,mp.cpu_count+1):
             v = np.concatenate(vprime,np.loadtxt("big"+str(k)+"/eng_dip.dat")[:,0])
         return v
-        print('hi')
+
 
     dmcTrimer = DMC(simName = "DMC_con_test",
                    outputFolder="DMCResults/",
