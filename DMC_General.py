@@ -173,7 +173,8 @@ class DMC:
                          coords=parent,
                          weights=dwts,
                          nDw = self.DwSteps,
-                         atms = self.atoms
+                         atms = self.atoms,
+                         vref=self.vrefAr
                          )
             if self.weighting=='discrete':
                 self.whoFrom, self.walkerC, self.walkerV = self.birthOrDeath_vec(Vref,DW)
@@ -184,7 +185,7 @@ class DMC:
             self.popAr[prop] = len(self.walkerC)
     def run(self):
         self.propagate()
-        np.save(self.outputFolder+"/"+self.simName+"_energies"+".npy",Constants.convert(self.vrefAr,"wavenumbers",to_AU=False))
+        np.save(self.outputFolder+"/"+self.simName+"_energies.npy",Constants.convert(self.vrefAr,"wavenumbers",to_AU=False))
         if self.weighting == 'discrete':
             np.save(self.outputFolder + "/" + self.simName + "_population" + ".npy",self.popAr)
 
