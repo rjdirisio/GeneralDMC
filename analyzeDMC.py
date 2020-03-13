@@ -9,6 +9,7 @@ from mplHelp import *
 #OH bond lengths
 #Weights over time
 #descendant weight histogram
+#This is to just give the user a feel of how the simulation went
 class analyzeDMCSim:
     def __init__(self,simName,energies=None):
         self.dmcZ = np.load()
