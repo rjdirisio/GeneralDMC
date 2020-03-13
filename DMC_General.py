@@ -1,6 +1,5 @@
 import numpy as np
 import os
-import time
 from ..researchUtils import Constants
 
 class DMC:
@@ -197,26 +196,26 @@ if __name__ == "__main__":
         sub.run('./calc_h2o_pot', cwd='PES/PES0')
         return np.loadtxt('PES/PES0/hoh_pot.dat')
 
-    def protCluster(cds):
-        atms = ['H','H','H','O','H','H','O','H','H','O']
-        import subprocess as sub
-        import multiprocessing as mp
-        splt = np.array_split(cds,mp.cpu_count())
-        for k in range(mp.cpu_count()):
-            tmm2 = time.time()
-            fllK = open('big'+str(k)+'coord.dat','w+')
-            fllK.write("10\n")
-            fllK.write("%d\n" % len(splt[k]))
-            for walk in range(len(splt[k])):
-                for atm in range(len(atms)):
-                    fllK.write("%0.18f %0.18f %0.18f %s\n" % (splt[k][walk,atm,0],splt[k][walk,atm,1],splt[k][walk,atm,2],atms[atm]))
-            fllK.close()
-        print(f'THAT took {time.time() - tmm2} seconds.')
-        sub.call('runPots.sh')
-        vprime = np.loadtxt("big1/eng_dip.dat")[:,0]
-        for k in range(2,mp.cpu_count+1):
-            v = np.concatenate(vprime,np.loadtxt("big"+str(k)+"/eng_dip.dat")[:,0])
-        return v
+    # def protCluster(cds):
+    #     atms = ['H','H','H','O','H','H','O','H','H','O']
+    #     import subprocess as sub
+    #     import multiprocessing as mp
+    #     splt = np.array_split(cds,mp.cpu_count())
+    #     for k in range(mp.cpu_count()):
+    #         tmm2 = time.time()
+    #         fllK = open('big'+str(k)+'coord.dat','w+')
+    #         fllK.write("10\n")
+    #         fllK.write("%d\n" % len(splt[k]))
+    #         for walk in range(len(splt[k])):
+    #             for atm in range(len(atms)):
+    #                 fllK.write("%0.18f %0.18f %0.18f %s\n" % (splt[k][walk,atm,0],splt[k][walk,atm,1],splt[k][walk,atm,2],atms[atm]))
+    #         fllK.close()
+    #     print(f'THAT took {time.time() - tmm2} seconds.')
+    #     sub.call('runPots.sh')
+    #     vprime = np.loadtxt("big1/eng_dip.dat")[:,0]
+    #     for k in range(2,mp.cpu_count+1):
+    #         v = np.concatenate(vprime,np.loadtxt("big"+str(k)+"/eng_dip.dat")[:,0])
+    #     return v
 
 
     dmcTrimer = DMC(simName = "DMC_con_test",

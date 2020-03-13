@@ -1,2 +1,2 @@
 from .DMC_General import *
-from .analyzeWfns import *
+from .analyzeDMC import *
