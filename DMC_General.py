@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from ..researchUtils import Constants
+from researchUtils import Constants
 
 class DMC:
     def __init__(self,
@@ -216,33 +216,53 @@ if __name__ == "__main__":
     #     for k in range(2,mp.cpu_count+1):
     #         v = np.concatenate(vprime,np.loadtxt("big"+str(k)+"/eng_dip.dat")[:,0])
     #     return v
+    def HODMC(cds):
+        omega = Constants.convert(3000.,'wavenumbers',to_AU=True)
+        mass = Constants.mass('H',to_AU=True)
+        return np.squeeze(0.5*mass*omega**2*cds**2)
 
-
-    dmcTrimer = DMC(simName = "DMC_con_test",
-                   outputFolder="DMCResults/",
+    dmc_HO = DMC(simName = "DMC_con_test",
+                   outputFolder="~/HODMC/",
                    weighting='discrete',
-                   initialWalkers=1000,
-                   nTimeSteps=1000+1,
-                   equilTime=500,
-                   wfnSpacing=100,
+                   initialWalkers=10000,
+                   nTimeSteps=10000+1,
+                   equilTime=1000,
+                   wfnSpacing=5000,
                    DwSteps=50,
-                   atoms=['H','H','H','O','H','H','O','H','H','O'],
-                   dimensions=3,
+                   atoms=['H'],
+                   dimensions=1,
                    deltaT=5,
                    D=0.5,
-                   potential=protCluster,
+                   potential=HODMC,
                    masses=None,
                    startStructure = Constants.convert(
-                       np.array([[0.00000, 0.91527, -0.05817],
-                           [0.00000, 1.67720, 0.53729],
-                           [-0.87302, 0.35992, 0.01707],
-                           [2.56267, -0.75858, 0.76451],
-                           [2.70113, -0.40578, -0.73813],
-                           [2.07091, -0.46191, -0.00993],
-                           [0.87302, 0.35993, 0.01707],
-                           [-2.70115, -0.40575, -0.73811],
-                           [-2.56265, -0.75862, 0.76451],
-                           [-2.07092, -0.46190, -0.00993]]
-                                )* 1.01
-                       ,"angstroms",to_AU=True))
-    dmcTrimer.run()
+                       np.array([[0.00000]]),"angstroms",to_AU=True))
+    dmc_HO.run()
+    # dmcTrimer = DMC(simName = "DMC_con_test",
+    #                outputFolder="DMCResults/",
+    #                weighting='discrete',
+    #                initialWalkers=1000,
+    #                nTimeSteps=1000+1,
+    #                equilTime=500,
+    #                wfnSpacing=100,
+    #                DwSteps=50,
+    #                atoms=['H','H','H','O','H','H','O','H','H','O'],
+    #                dimensions=3,
+    #                deltaT=5,
+    #                D=0.5,
+    #                potential=protCluster,
+    #                masses=None,
+    #                startStructure = Constants.convert(
+    #                    np.array([[0.00000, 0.91527, -0.05817],
+    #                        [0.00000, 1.67720, 0.53729],
+    #                        [-0.87302, 0.35992, 0.01707],
+    #                        [2.56267, -0.75858, 0.76451],
+    #                        [2.70113, -0.40578, -0.73813],
+    #                        [2.07091, -0.46191, -0.00993],
+    #                        [0.87302, 0.35993, 0.01707],
+    #                        [-2.70115, -0.40575, -0.73811],
+    #                        [-2.56265, -0.75862, 0.76451],
+    #                        [-2.07092, -0.46190, -0.00993]]
+    #                             )* 1.01
+    #                    ,"angstroms",to_AU=True))
+    # dmcTrimer.run()
