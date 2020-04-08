@@ -127,10 +127,11 @@ class DMC:
              Use the energy of all walkers to calculate vref with a correction for the fluctuation in the population
              or weight.
          """
-        Vbar = np.average(self.walkerV)
         if self.weighting == 'discrete':
+            Vbar = np.average(self.walkerV)
             correction = (len(self.walkerV) - self.initialWalkers) / self.initialWalkers
         else:
+            Vbar = np.average(self.walkerV,weights=self.contWts)
             correction = (np.sum(self.contWts - np.ones(self.initialWalkers))) / self.initialWalkers
         vref = Vbar - (self.alpha * correction)
         return vref
