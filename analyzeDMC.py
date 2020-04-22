@@ -12,7 +12,7 @@ from mplHelp import *
 #This is to just give the user a feel of how the simulation went
 class analyzeDMCSim:
     def __init__(self,simName,energies=None):
-        self.dmcZ = np.load()
+        self.dmcZ = np.load(simName)
         self.energies=energies
     def get_vref(self):
         """extract vref vs tau from 0 -> the time the wave function was collected. This is mainly for if the sim died.

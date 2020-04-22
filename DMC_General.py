@@ -13,12 +13,13 @@ class DMC:
                  wfnSpacing = 1000,
                  DwSteps = 50,
                  atoms = [],
-                 dimensions = 1,
+                 dimensions = 3,
                  deltaT = 5,
                  D = 0.5,
                  potential=None,
                  masses = None,
-                 startStructure = None
+                 startStructure = None,
+                 branch_every = 1
                  ):
         """
         :param simName:Simulation name for saving wavefunctions
@@ -60,6 +61,8 @@ class DMC:
         self.potential = potential
         self.weighting = weighting
         self.DwSteps=DwSteps
+        self.branch_every = branch_every
+        self.branch_step = np.arange(0,nTimeSteps,self.branch_every)
         self.WfnSaveStep = np.arange(equilTime,nTimeSteps,wfnSpacing)
         self.DwSaveStep = self.WfnSaveStep+self.DwSteps
         self.whoFrom = None #Not descendant weighting yet
@@ -68,9 +71,8 @@ class DMC:
         self.popAr = np.zeros(self.nTimeSteps)
         self.deltaT = deltaT
         self.alpha = 1.0 / (2.0 * deltaT)  # simulation parameter - adjustable
-
         if startStructure is None:
-            self.walkerC = np.zeros(self.initialWalkers,len(atoms),dimensions)
+            self.walkerC = np.zeros((self.initialWalkers,len(atoms),dimensions))
         else:
             self.walkerC = np.repeat(np.expand_dims(startStructure, axis=0), self.initialWalkers, axis=0)
         if masses is None:
@@ -176,10 +178,16 @@ class DMC:
                          atms = self.atoms,
                          vref=self.vrefAr
                          )
-            if self.weighting=='discrete':
-                self.whoFrom, self.walkerC, self.walkerV = self.birthOrDeath_vec(Vref,DW)
+            if prop in self.branch_step:
+                print(f"branching at step {prop}")
+                if self.weighting=='discrete':
+                    self.whoFrom, self.walkerC, self.walkerV = self.birthOrDeath_vec(Vref,DW)
+                else:
+                    self.contWts,self.whoFrom, self.walkerC, self.walkerV = self.birthOrDeath_vec(Vref, DW)
             else:
-                self.contWts,self.whoFrom, self.walkerC, self.walkerV = self.birthOrDeath_vec(Vref, DW)
+                if self.weighting=='continuous':
+                    self.contWts = self.contWts*np.exp(-1.0*(self.walkerV - Vref) * self.deltaT)
+
             Vref = self.getVref()
             self.vrefAr[prop] = Vref
             self.popAr[prop] = len(self.walkerC)
